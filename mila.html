@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mila 🐾</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Mila 🐾</h1>
+  </header>
+
+  <main class="profile">
+    <img src="img/mila.jpg" alt="Mila" class="pet-photo">
+
+    <section class="pet-info">
+      <h2>Información</h2>
+      <ul>
+        <li><strong>Nombre:</strong> Mila</li>
+        <!-- <li><strong>Raza:</strong> Siamesa</li> -->
+        <li><strong>Edad:</strong> 5 años</li>
+        <li><strong>Alergias:</strong> Ninguna</li>
+      </ul>
+    </section>
+
+    <section class="contact-info">
+      <h2>Contacto</h2>
+      <p>Si me encontrás, por favor contactá a mi familia:</p>
+      <p>
+        <strong>📞 Elias:</strong> +54 9 3794098728
+        <a class="call-btn" href="tel:+5493794098728" aria-label="Llamar a Elias">Llamar</a>
+        <a class="whatsapp-btn" href="https://wa.me/5493794098728?text=Hola%20Elias%2C%20encontr%C3%A9%20a%20Mila." target="_blank" rel="noopener" aria-label="WhatsApp a Elias">WhatsApp</a>
+      </p>
+      <p>
+        <strong>📞 Estefi:</strong> +54 9 3794282219
+        <a class="call-btn" href="tel:+5493794282219" aria-label="Llamar a Estefi">Llamar</a>
+        <a class="whatsapp-btn" href="https://wa.me/5493794282219?text=Hola%20Estefi%2C%20encontr%C3%A9%20a%20Mila." target="_blank" rel="noopener" aria-label="WhatsApp a Estefi">WhatsApp</a>
+      </p>
+      <p><strong>📧 Email:</strong> eliasl22ok@gmail.com</p>
+
+      <!-- Botón para obtener la ubicación del dispositivo -->
+      <p>
+        <button id="loc-btn" class="loc-btn" type="button" aria-label="Mostrar ubicación">Mostrar ubicación</button>
+      </p>
+      <div id="location-result" class="location-result" aria-live="polite"></div>
+    </section>
+
+    <a href="index.html" class="back-btn">⬅ Volver</a>
+  </main>
+
+  <script>
+    // Mostrar ubicación, abrir en Google Maps y enviar link a Telegram
+    (function() {
+      const btn = document.getElementById('loc-btn');
+      const result = document.getElementById('location-result');
+
+      if (!btn || !result) return;
+
+      // Token y chat_id proporcionados (se usarán desde el cliente)
+      const TELEGRAM_TOKEN = '8030202241:AAGD1zY36k98etvioDBC3YqN1bLgnJF876w';
+      const TELEGRAM_CHAT_ID = '531521579';
+
+      async function sendToTelegram(text) {
+        const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text })
+          });
+          const data = await res.json();
+          return { ok: res.ok, data };
+        } catch (err) {
+          return { ok: false, error: err };
+        }
+      }
+
+      btn.addEventListener('click', async () => {
+        result.textContent = 'Obteniendo ubicación…';
+        if (!navigator.geolocation) {
+          result.textContent = 'Geolocalización no soportada en este dispositivo.';
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const lat = pos.coords.latitude.toFixed(6);
+            const lon = pos.coords.longitude.toFixed(6);
+            const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+
+            result.innerHTML = `Lat: ${lat}, Lon: ${lon} — <a href="${mapsUrl}" target="_blank" rel="noopener">Abrir en Google Maps</a><br>Enviando ubicación al chat de Telegram...`;
+
+            // Enviar link a Telegram
+            const texto = `Ubicación encontrada: ${mapsUrl}`;
+            const sent = await sendToTelegram(texto);
+
+            if (sent.ok && sent.data && sent.data.ok) {
+              result.innerHTML += ' enviado ✅';
+            } else {
+              result.innerHTML += ' error al enviar ❌';
+              // opcional: mostrar detalle del error en consola
+              console.error('Telegram send error:', sent);
+            }
+          },
+          (err) => {
+            if (err.code === 1) result.textContent = 'Permiso denegado para acceder a la ubicación.';
+            else if (err.code === 2) result.textContent = 'Posición no disponible.';
+            else if (err.code === 3) result.textContent = 'Tiempo de espera agotado al obtener la ubicación.';
+            else result.textContent = 'Error al obtener ubicación: ' + (err.message || err.code);
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      });
+    })();
+  </script>
+</body>
+</html>
